@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Seguimiento DT 2026 — CATI + WEB</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --navy:#0D1B2A;--navy2:#1A2F45;--navy3:#243D57;
+  --gold:#C8A84B;--gold2:#E8C96A;
+  --cati:#2E75B6;--cati2:#5BA3E0;
+  --web:#1E8449;--web2:#27AE60;
+  --teal:#1D9E75;--teal2:#27C28F;
+  --amber:#E67E22;--red:#C0392B;--slate:#7F8C8D;
+  --text:#ECF0F1;--text2:#95A5A6;--text3:#BDC3C7;
+  --bg:#0D1B2A;--card:#1A2F45;--card2:#1F3A55;
+  --border:rgba(255,255,255,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sora',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px}
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:linear-gradient(135deg,var(--navy2),var(--navy3));border-bottom:1px solid var(--gold);
+  padding:12px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.topbar-left h1{font-size:18px;font-weight:600;color:var(--text)}
+.topbar-left h1 span{color:var(--gold)}
+.topbar-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.badge-cati{background:rgba(46,117,182,0.25);color:var(--cati2);border:1px solid var(--cati);
+  padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600}
+.badge-web{background:rgba(30,132,73,0.25);color:var(--web2);border:1px solid var(--web);
+  padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600}
+.btn-cfg{background:rgba(200,168,75,0.15);color:var(--gold);border:1px solid rgba(200,168,75,0.4);
+  padding:5px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-family:'Sora',sans-serif}
+.btn-cfg:hover{background:rgba(200,168,75,0.3)}
+/* ── TABS ── */
+.tabs{background:var(--navy2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:0;overflow-x:auto}
+.tab{padding:10px 18px;cursor:pointer;font-size:12px;color:var(--text2);border-bottom:2px solid transparent;
+  white-space:nowrap;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;
+  font-family:'Sora',sans-serif}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+/* ── PANELS ── */
+.panel{display:none;padding:20px 24px;animation:fadeIn .2s ease}
+.panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+.metric{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.metric.gold::before{background:var(--gold)}
+.metric.cati::before{background:var(--cati)}
+.metric.web::before{background:var(--web)}
+.metric.teal::before{background:var(--teal)}
+.metric.amber::before{background:var(--amber)}
+.metric.red::before{background:var(--red)}
+.m-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.m-value{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;line-height:1}
+.m-value.gold{color:var(--gold)}
+.m-value.cati{color:var(--cati2)}
+.m-value.web{color:var(--web2)}
+.m-value.teal{color:var(--teal2)}
+.m-value.amber{color:var(--amber)}
+.m-value.red{color:var(--red)}
+.m-sub{font-size:10px;color:var(--text2);margin-top:6px}
+.m-badge{display:inline-block;font-size:9px;padding:2px 6px;border-radius:10px;margin-top:4px}
+.m-badge.green{background:rgba(29,158,117,.2);color:var(--teal2)}
+.m-badge.amber{background:rgba(230,126,34,.2);color:var(--amber)}
+.m-badge.red{background:rgba(192,57,43,.2);color:var(--red)}
+/* ── PROGRESS BAR ── */
+.prog-wrap{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:20px}
+.prog-title{font-size:12px;font-weight:600;color:var(--gold);margin-bottom:12px;display:flex;justify-content:space-between}
+.prog-bar-bg{background:rgba(255,255,255,.07);border-radius:20px;height:22px;overflow:hidden;margin-bottom:6px;position:relative}
+.prog-bar-fill{height:100%;border-radius:20px;transition:width 1s ease;display:flex;align-items:center;padding:0 10px}
+.prog-bar-fill span{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:#fff;white-space:nowrap}
+.prog-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:10px;color:var(--text2);margin-top:6px}
+.prog-legend span{display:flex;align-items:center;gap:4px}
+.prog-legend span::before{content:'';width:10px;height:10px;border-radius:2px;display:inline-block}
+/* ── CHARTS GRID ── */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.chart-card.span2{grid-column:1/-1}
+.c-title{font-size:11px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:.04em;
+  margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.c-badge{font-size:9px;color:var(--text2);text-transform:none;letter-spacing:0;font-weight:400}
+/* ── HEATMAP TABLA ── */
+.heatmap-wrap{overflow-x:auto}
+.heatmap-table{width:100%;border-collapse:collapse;font-size:10px;white-space:nowrap}
+.heatmap-table th{background:var(--navy3);color:var(--text2);padding:5px 8px;text-align:center;
+  border:1px solid var(--border);font-weight:500;position:sticky;top:0}
+.heatmap-table th.reg{text-align:left;min-width:140px}
+.heatmap-table td{padding:4px 8px;border:1px solid var(--border);text-align:center;
+  font-family:'DM Mono',monospace;font-size:10px}
+.heatmap-table td.reg{text-align:left;color:var(--text3);font-family:'Sora',sans-serif}
+.heatmap-table td.total-col{font-weight:600;background:rgba(200,168,75,.1);color:var(--gold)}
+.heatmap-table tr.total-row td{background:var(--navy3);font-weight:600;color:var(--text)}
+/* ── SEMAFOROS ── */
+.semafor-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.semafor-item{background:var(--card2);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border)}
+.semafor-icon{font-size:22px;margin-bottom:4px}
+.semafor-label{font-size:10px;color:var(--text2);margin-bottom:4px}
+.semafor-val{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
+/* ── SECTION HEADER ── */
+.sec-hdr{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;
+  margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.sec-hdr::before{content:'';width:3px;height:14px;border-radius:2px;background:var(--gold);display:inline-block}
+/* ── CONFIG MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--navy2);border:1px solid var(--border);border-radius:14px;padding:28px;width:min(520px,95vw);
+  box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.modal h2{font-size:16px;color:var(--gold);margin-bottom:6px}
+.modal p{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:14px}
+.step{display:flex;gap:12px;margin-bottom:16px;align-items:flex-start}
+.step-n{background:var(--gold);color:#000;border-radius:50%;width:22px;height:22px;display:flex;
+  align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px}
+.step-body{flex:1}
+.step-label{font-size:11px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.step-desc{font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:6px}
+.step-desc code{background:rgba(200,168,75,.15);color:var(--gold);padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace}
+input[type=text]{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);
+  border-radius:6px;padding:8px 12px;color:var(--text);font-size:12px;font-family:'DM Mono',monospace;outline:none}
+input[type=text]:focus{border-color:var(--gold)}
+.modal-btns{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+.btn-primary{background:var(--gold);color:#000;border:none;padding:8px 20px;border-radius:6px;
+  cursor:pointer;font-size:12px;font-weight:600;font-family:'Sora',sans-serif}
+.btn-secondary{background:transparent;color:var(--text2);border:1px solid var(--border);
+  padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'Sora',sans-serif}
+/* ── CONFIG BANNER ── */
+.cfg-banner{background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.4);border-radius:8px;
+  padding:10px 14px;margin-bottom:16px;display:none;font-size:11px;color:#E74C3C;
+  display:flex;gap:8px;align-items:flex-start}
+.cfg-banner.hidden{display:none!important}
+/* ── TABLE ── */
+.data-table{width:100%;border-collapse:collapse;font-size:11px}
+.data-table th{background:var(--navy3);color:var(--text2);padding:8px 10px;text-align:left;
+  border-bottom:1px solid var(--border);font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.data-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text3)}
+.data-table tr:hover td{background:rgba(255,255,255,.03)}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:9px;font-weight:600}
+.pill.green{background:rgba(29,158,117,.2);color:var(--teal2)}
+.pill.amber{background:rgba(230,126,34,.2);color:var(--amber)}
+.pill.red{background:rgba(192,57,43,.2);color:var(--red)}
+.pill.blue{background:rgba(46,117,182,.2);color:var(--cati2)}
+.pill.gray{background:rgba(127,140,141,.2);color:var(--slate)}
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  .charts-grid{grid-template-columns:1fr}
+  .chart-card.span2{grid-column:1}
+  .topbar{padding:10px 16px}
+  .panel{padding:14px 16px}
+  .tabs{padding:0 16px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <h1>Dashboard Seguimiento <span>DT 2026</span></h1>
+    <div class="topbar-meta" id="topbar-meta">Cargando datos…</div>
+  </div>
+  <div class="topbar-right">
+    <span class="badge-cati">📞 CATI</span>
+    <span class="badge-web">🌐 WEB</span>
+    <button class="btn-cfg" onclick="openModal()">⚙ Configurar</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('ejecutivo',this)">📊 Ejecutivo</button>
+  <button class="tab" onclick="switchTab('cati',this)">📞 CATI</button>
+  <button class="tab" onclick="switchTab('web',this)">🌐 WEB</button>
+  <button class="tab" onclick="switchTab('metas',this)">🎯 Metas Seg×Reg</button>
+  <button class="tab" onclick="switchTab('proyeccion',this)">📈 Proyección</button>
+</div>
+
+<!-- BANNER CONFIG -->
+<div id="cfg-banner" class="cfg-banner hidden" style="margin:12px 24px 0">
+  ⚠ Dashboard en <strong>modo demo</strong> — conecta tu Google Sheet en ⚙ Configurar para ver datos reales.
+</div>
+
+<!-- ══ TAB: EJECUTIVO ══════════════════════════════════════════════════════ -->
+<div id="panel-ejecutivo" class="panel active">
+
+  <div class="sec-hdr">Avance global — 3.500 encuestas logradas</div>
+  <div class="prog-wrap">
+    <div class="prog-title">
+      <span>Progreso total CATI + WEB</span>
+      <span id="prog-pct" style="font-family:'DM Mono',monospace;color:var(--gold)">–%</span>
+    </div>
+    <div class="prog-bar-bg">
+      <div class="prog-bar-fill" id="prog-bar-cati" style="background:var(--cati);width:0%">
+        <span id="prog-label-cati"></span>
+      </div>
+    </div>
+    <div class="prog-bar-bg" style="margin-top:6px">
+      <div class="prog-bar-fill" id="prog-bar-web" style="background:var(--web);width:0%">
+        <span id="prog-label-web"></span>
+      </div>
+    </div>
+    <div class="prog-legend">
+      <span><span style="background:var(--cati)"></span>CATI logradas</span>
+      <span><span style="background:var(--web)"></span>WEB válidas</span>
+      <span><span style="background:rgba(255,255,255,.1)"></span>Pendiente</span>
+    </div>
+  </div>
+
+  <div class="metrics" id="metrics-exec"></div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="c-title">Avance por segmento <span class="c-badge">logradas vs meta</span></div>
+      <canvas id="chart-seg-exec" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">Mix de canales <span class="c-badge">CATI vs WEB</span></div>
+      <canvas id="chart-mix" height="220"></canvas>
+    </div>
+    <div class="chart-card span2">
+      <div class="c-title">Curva de avance diario <span class="c-badge">real vs proyección lineal</span></div>
+      <canvas id="chart-curva" height="120"></canvas>
+    </div>
+  </div>
+
+  <div class="sec-hdr">Semáforo por segmento</div>
+  <div class="semafor-grid" id="semafor-segs"></div>
+</div>
+
+<!-- ══ TAB: CATI ══════════════════════════════════════════════════════════ -->
+<div id="panel-cati" class="panel">
+  <div class="metrics" id="metrics-cati"></div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="c-title">Embudo de gestión <span class="c-badge">universo → logradas</span></div>
+      <canvas id="chart-embudo" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">Tipificación de llamadas <span class="c-badge">distribución</span></div>
+      <canvas id="chart-tipif" height="220"></canvas>
+      <div id="legend-tipif" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;font-size:10px;color:var(--text2)"></div>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">Avance CATI por región <span class="c-badge">top 10</span></div>
+      <canvas id="chart-cati-reg" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">Intentos por registro <span class="c-badge">distribución 1-3</span></div>
+      <canvas id="chart-intentos" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="sec-hdr">Celdas críticas CATI — menor avance relativo</div>
+  <div style="overflow-x:auto">
+    <table class="data-table" id="tabla-criticas">
+      <thead><tr>
+        <th>Celda</th><th>Segmento</th><th>Región</th>
+        <th>Meta</th><th>CATI Logradas</th><th>WEB Válidas</th>
+        <th>Total</th><th>% Cumpl.</th><th>Estado</th>
+      </tr></thead>
+      <tbody id="tbody-criticas"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ TAB: WEB ════════════════════════════════════════════════════════════ -->
+<div id="panel-web" class="panel">
+  <div class="metrics" id="metrics-web"></div>
+
+  <div class="charts-grid">
+    <div class="chart-card span2">
+      <div class="c-title">Respuestas WEB diarias <span class="c-badge">últimos 30 días</span></div>
+      <canvas id="chart-web-diario" height="120"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">WEB por segmento declarado</div>
+      <canvas id="chart-web-seg" height="220"></canvas>
+      <div id="legend-web-seg" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;font-size:10px;color:var(--text2)"></div>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">WEB por región declarada <span class="c-badge">top 10</span></div>
+      <canvas id="chart-web-reg" height="220"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: METAS SEG×REG ════════════════════════════════════════════════ -->
+<div id="panel-metas" class="panel">
+  <div class="sec-hdr">Heatmap de cumplimiento — logradas vs meta por celda (segmento × región)</div>
+  <div class="heatmap-wrap">
+    <table class="heatmap-table" id="heatmap-table">
+      <thead id="heatmap-thead"></thead>
+      <tbody id="heatmap-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ TAB: PROYECCIÓN ════════════════════════════════════════════════════ -->
+<div id="panel-proyeccion" class="panel">
+  <div class="metrics" id="metrics-proy"></div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="c-title">Avance acumulado vs proyección <span class="c-badge">real · proyección lineal · meta</span></div>
+    <canvas id="chart-proy" height="150"></canvas>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="c-title">Producción diaria <span class="c-badge">CATI + WEB por día</span></div>
+      <canvas id="chart-prod-diaria" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="c-title">Celdas completadas vs pendientes</div>
+      <canvas id="chart-celdas" height="220"></canvas>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- ══ MODAL CONFIGURACIÓN ═════════════════════════════════════════════════ -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>⚙ Configurar fuente de datos</h2>
+    <p>Conecta el dashboard a tu Google Sheet con 4 pasos:</p>
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-body">
+        <div class="step-label">ID de Google Sheet</div>
+        <div class="step-desc">Copia el ID de la URL: <code>spreadsheets/d/<strong>ESTE_ID</strong>/edit</code></div>
+        <input type="text" id="inp-sheet-id" placeholder="Ej: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqp…">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-body">
+        <div class="step-label">API Key de Google Sheets</div>
+        <div class="step-desc"><a href="https://console.cloud.google.com" target="_blank" style="color:var(--gold)">Google Cloud Console</a> → Credenciales → Crear clave de API → activar "Google Sheets API"</div>
+        <input type="text" id="inp-api-key" placeholder="Ej: AIzaSy…">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-body">
+        <div class="step-label">Fecha de cierre del estudio</div>
+        <div class="step-desc">Para calcular proyección de cumplimiento.</div>
+        <input type="text" id="inp-fecha-cierre" placeholder="DD/MM/AAAA">
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">4</div>
+      <div class="step-body">
+        <div class="step-label">Hacer pública la planilla</div>
+        <div class="step-desc">Google Sheets → Compartir → Cualquier persona con el enlace → <strong>Lector</strong></div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="useDemo()">Usar datos demo</button>
+      <button class="btn-primary" onclick="conectar()">Conectar planilla</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ CONSTANTES ════════════════════════════════════════════════════════════════
+const CFG_KEY = 'dt2026_cfg_v2';
+let CFG = JSON.parse(localStorage.getItem(CFG_KEY)||'{}');
+let charts = {};
+const META_TOTAL = 3500;
+
+const SEG_LABELS = [
+  'Empleador – Registro de Contrato de Trabajo',
+  'Empleador – Registro del Libro de Remuneraciones Electrónico',
+  'Trabajadores – Denuncia Laboral – Digital',
+  'Trabajadores – Denuncia Laboral – Presencial',
+  'Trabajadores – Audiencia de Conciliación o Reclamo por Despido – Digital',
+  'Trabajadores – Audiencia de Conciliación o Reclamo por Despido – Presencial'
+];
+const SEG_LABELS_SHORT = [
+  'Empl. Contrato','Empl. Libro Rem.',
+  'Trab. Denuncia Dig.','Trab. Denuncia Pres.',
+  'Trab. Audiencia Dig.','Trab. Audiencia Pres.'
+];
+const SEG_CODES = ['Seg1_Contrato','Seg2_LibroRem','Seg3_DenunciaD','Seg4_DenunciaP','Seg5_AudienciaD','Seg6_AudienciaP'];
+// Alias adicionales por si los datos vienen con otros nombres
+const SEG_ALIASES = {
+  'Seg1_Empleador_Contrato':'Seg1_Contrato',
+  'Seg2_Empleador_LibroRem':'Seg2_LibroRem',
+  'Seg3_Trabajador_Denuncia_Digital':'Seg3_DenunciaD',
+  'Seg4_Trabajador_Denuncia_Presencial':'Seg4_DenunciaP',
+  'Seg5_Trabajador_Audiencia_Digital':'Seg5_AudienciaD',
+  'Seg6_Trabajador_Audiencia_Presencial':'Seg6_AudienciaP',
+  'empleador – registro de contrato de trabajo':'Seg1_Contrato',
+  'empleador – registro del libro de remuneraciones electrónico':'Seg2_LibroRem',
+  'trabajadores – denuncia laboral – digital':'Seg3_DenunciaD',
+  'trabajadores – denuncia laboral – presencial':'Seg4_DenunciaP',
+  'trabajadores – audiencia de conciliación o reclamo por despido – digital':'Seg5_AudienciaD',
+  'trabajadores – audiencia de conciliación o reclamo por despido – presencial':'Seg6_AudienciaP',
+};
+function normSeg(s){ if(!s) return s; const k=s.trim(); return SEG_ALIASES[k]||SEG_ALIASES[k.toLowerCase()]||k; }
+const SEG_COLORS = ['#C8A84B','#2E75B6','#E67E22','#1E8449','#8E44AD','#E74C3C'];
+
+const REGIONS = ['Arica y Parinacota','Tarapacá','Antofagasta','Atacama','Coquimbo','Valparaíso',
+  'Región Metropolitana',"O'Higgins",'Maule','Ñuble','Biobío','La Araucanía','Los Ríos','Los Lagos','Aysén','Magallanes'];
+
+// Metas exactas [Seg1..Seg6] por región
+const METAS_MATRIX = {
+  'Arica y Parinacota':   [18,24,0,30,19,29],
+  'Tarapacá':             [28,20,6,26,17,32],
+  'Antofagasta':          [25,28,16,43,39,21],
+  'Atacama':              [22,24,7,19,13,39],
+  'Coquimbo':             [23,27,10,39,36,34],
+  'Valparaíso':           [50,46,18,47,57,67],
+  'Región Metropolitana': [150,151,237,111,197,103],
+  "O'Higgins":            [40,51,7,42,25,31],
+  'Maule':                [44,40,11,32,33,41],
+  'Ñuble':                [26,23,10,15,30,35],
+  'Biobío':               [41,43,19,29,62,49],
+  'La Araucanía':         [39,36,16,27,44,30],
+  'Los Ríos':             [31,23,5,21,15,36],
+  'Los Lagos':            [42,43,18,56,21,31],
+  'Aysén':                [17,19,2,41,11,24],
+  'Magallanes':           [27,25,3,45,4,21],
+};
+
+// Normalización de nombres de región
+const REG_NORM = {
+  'METROPOLITANA':'Región Metropolitana','REGION METROPOLITANA':'Región Metropolitana',
+  'REGIÓN METROPOLITANA DE SANTIAGO':'Región Metropolitana','REGIÓN METROPOLITANA':'Región Metropolitana','RM':'Región Metropolitana',
+  'ARICA Y PARINACOTA':'Arica y Parinacota','REGION ARICA PARINACOTA':'Arica y Parinacota','REGIÓN DE ARICA Y PARINACOTA':'Arica y Parinacota',
+  'TARAPACÁ':'Tarapacá','TARAPACA':'Tarapacá','REGION TARAPACA':'Tarapacá','REGIÓN DE TARAPACÁ':'Tarapacá',
+  'ANTOFAGASTA':'Antofagasta','REGION ANTOFAGASTA':'Antofagasta','REGIÓN DE ANTOFAGASTA':'Antofagasta',
+  'ATACAMA':'Atacama','REGION ATACAMA':'Atacama','REGIÓN DE ATACAMA':'Atacama',
+  'COQUIMBO':'Coquimbo','REGION COQUIMBO':'Coquimbo','REGIÓN DE COQUIMBO':'Coquimbo',
+  'VALPARAÍSO':'Valparaíso','VALPARAISO':'Valparaíso','REGION VALPARAISO':'Valparaíso','REGIÓN DE VALPARAÍSO':'Valparaíso',
+  "O'HIGGINS":"O'Higgins",'OHIGGINS':"O'Higgins",'LIBERTADOR GENERAL BERNARDO O HIGGINS':"O'Higgins",'REGIÓN L. BDO. O HIGGINS':"O'Higgins",
+  'MAULE':'Maule','REGION DEL MAULE':'Maule','REGIÓN DEL MAULE':'Maule',
+  'ÑUBLE':'Ñuble','NUBLE':'Ñuble','REGION ÑUBLE':'Ñuble','REGIÓN DEL ÑUBLE':'Ñuble',
+  'BIOBÍO':'Biobío','BIOBIO':'Biobío','REGION DEL BIO BIO':'Biobío','REGIÓN DEL BIOBÍO':'Biobío','CONCEPCIÓN':'Biobío',
+  'LA ARAUCANÍA':'La Araucanía','ARAUCANIA':'La Araucanía','ARAUCANÍA':'La Araucanía','REGION ARAUCANIA':'La Araucanía','REGIÓN DE LA ARAUCANÍA':'La Araucanía',
+  'LOS RÍOS':'Los Ríos','LOS RIOS':'Los Ríos','REGION DE LOS RIOS':'Los Ríos','REGIÓN DE LOS RÍOS':'Los Ríos',
+  'LOS LAGOS':'Los Lagos','REGION LOS LAGOS':'Los Lagos','REGIÓN DE LOS LAGOS':'Los Lagos',
+  'AYSÉN':'Aysén','AYSEN':'Aysén','REGIÓN DE AYSÉN DEL GENERAL CARLOS IBÁÑEZ DEL CAMPO':'Aysén','REGION AYSEN DEL GENERAL CARLOS IBAÑEZ DEL CAMPO':'Aysén',
+  'MAGALLANES':'Magallanes','REGION MAGALLANES Y LA ANTARTICA CHILENA':'Magallanes','REGIÓN DE MAGALLANES Y LA ANTÁRTICA CHILENA':'Magallanes',
+};
+function normReg(s){ if(!s) return ''; const u=s.trim(); return REG_NORM[u.toUpperCase()]||REG_NORM[u]||u; }
+
+// ══ UTILS ═════════════════════════════════════════════════════════════════════
+const fmt = n => n==null?'–':Number(n).toLocaleString('es-CL');
+const pct = (a,b) => b>0 ? (a/b*100).toFixed(1) : '0.0';
+const $  = id => document.getElementById(id);
+
+function killChart(id){ if(charts[id]){charts[id].destroy();delete charts[id];} }
+
+function heatColor(p){
+  if(p>=1)  return '#1D9E75';
+  if(p>=.7) return '#27AE60';
+  if(p>=.5) return '#E67E22';
+  if(p>=.3) return '#D35400';
+  if(p>0)   return '#C0392B';
+  return '#2C3E50';
+}
+
+// ══ TABS ══════════════════════════════════════════════════════════════════════
+function switchTab(name, btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  $('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ══ MODAL ════════════════════════════════════════════════════════════════════
+function openModal(){
+  $('inp-sheet-id').value = CFG.sheetId||'';
+  $('inp-api-key').value  = CFG.apiKey||'';
+  $('inp-fecha-cierre').value = CFG.fechaCierre||'';
+  $('overlay').classList.add('open');
+}
+function closeModal(){ $('overlay').classList.remove('open'); }
+$('overlay').addEventListener('click', e=>{ if(e.target===$('overlay')) closeModal(); });
+
+function conectar(){
+  CFG.sheetId     = $('inp-sheet-id').value.trim();
+  CFG.apiKey      = $('inp-api-key').value.trim();
+  CFG.fechaCierre = $('inp-fecha-cierre').value.trim();
+  CFG.demo        = false;
+  localStorage.setItem(CFG_KEY, JSON.stringify(CFG));
+  closeModal();
+  loadData();
+}
+
+// ══ FETCH SHEETS ══════════════════════════════════════════════════════════════
+async function fetchSheet(name, range='A:V'){
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${CFG.sheetId}/values/${encodeURIComponent(name+'!'+range)}?key=${CFG.apiKey}`;
+  const r = await fetch(url);
+  if(!r.ok) throw new Error(`HTTP ${r.status} al leer ${name}`);
+  const d = await r.json();
+  return d.values||[];
+}
+
+// ══ PARSERS ═══════════════════════════════════════════════════════════════════
+function parseCATI(values){
+  // Fila 0=título, 1=subtítulo, 2=grupo, 3=headers, 4=descrip, 5+=datos
+  return values.slice(5).map(r=>({
+    seg:     (r[1]||'').trim(),
+    tipo:    (r[2]||'').trim(),
+    canal:   (r[3]||'').trim(),
+    region:  normReg(r[4]||''),
+    nombre:  (r[5]||'').trim(),
+    meta:    parseInt(r[10])||0,
+    fecha:   (r[11]||'').trim(),
+    intento: parseInt(r[12])||0,
+    encuestador:(r[13]||'').trim(),
+    tipif:   (r[14]||'').trim(),
+    contactado:(r[15]||'').trim(),
+    realizo: (r[16]||'').trim(),
+    estado:  (r[17]||'').trim(),
+    motivo:  (r[18]||'').trim(),
+  })).filter(r=>r.region||r.seg);
+}
+
+function parseWEB(values){
+  // Fila 0=título, 1=subtítulo, 2=grupo, 3=headers, 4=descrip, 5+=datos
+  return values.slice(5).map(r=>({
+    id:      r[0]||'',
+    fecha:   (r[1]||'').trim(),
+    seg:     (r[3]||'').trim(),
+    region:  normReg(r[4]||''),
+    duracion:parseFloat(r[6])||0,
+    complet: parseFloat(r[7])||0,
+    fueCAIT: (r[8]||'').trim(),
+    valida:  (r[9]||'').trim(),
+  })).filter(r=>r.seg||r.region);
+}
+
+function parseControl(values){
+  // Fila 0=título, 1=subtítulo, 2=grupo, 3=headers, 4+=datos
+  return values.slice(4).map(r=>({
+    id:       (r[0]||'').trim(),
+    seg:      normSeg((r[1]||'').trim()),
+    segNombre:(r[2]||'').trim(),
+    tipo:     (r[3]||'').trim(),
+    region:   normReg(r[4]||''),
+    meta:     parseInt(r[5])||0,
+    contactos:parseInt(r[6])||0,
+    cati_c:   parseInt(r[8])||0,
+    cati_p:   parseInt(r[9])||0,
+    cati_r:   parseInt(r[10])||0,
+    web_v:    parseInt(r[11])||0,
+    total:    parseInt(r[14])||0,
+    pct:      parseFloat(r[15])||0,
+    brecha:   parseInt(r[16])||0,
+    semaforo: (r[17]||'').trim(),
+  })).filter(r=>r.meta>0);
+}
+
+function parseLog(values){
+  return values.slice(3).map(r=>({
+    fecha:    (r[0]||'').trim(),
+    cati_dia: parseInt(r[3])||0,
+    cati_acum:parseInt(r[4])||0,
+    web_dia:  parseInt(r[5])||0,
+    web_acum: parseInt(r[6])||0,
+    total_dia:parseInt(r[7])||0,
+    total_acum:parseInt(r[8])||0,
+    enc_activos:parseInt(r[12])||0,
+  })).filter(r=>r.fecha);
+}
+
+// ══ LOAD DATA ═════════════════════════════════════════════════════════════════
+async function loadData(){
+  if(!CFG.sheetId || !CFG.apiKey){
+    showBanner(true);
+    useDemo();
+    return;
+  }
+  $('topbar-meta').textContent = 'Cargando datos…';
+  showBanner(false);
+  try{
+    const [vCATI, vWEB, vControl, vLog] = await Promise.all([
+      fetchSheet('CATI_GESTION','A:V'),
+      fetchSheet('WEB_RESPUESTAS','A:N'),
+      fetchSheet('CONTROL_METAS','A:T'),
+      fetchSheet('LOG_DIARIO','A:P'),
+    ]);
+    const cati    = parseCATI(vCATI);
+    const web     = parseWEB(vWEB);
+    const control = parseControl(vControl);
+    const log     = parseLog(vLog);
+    renderAll(cati, web, control, log);
+    $('topbar-meta').textContent = `${fmt(cati.length)} registros CATI · ${fmt(web.filter(w=>w.valida==='Sí').length)} WEB válidas · Actualizado ${new Date().toLocaleTimeString('es-CL')}`;
+  } catch(e){
+    $('topbar-meta').textContent = `Error: ${e.message}`;
+    showBanner(true);
+    useDemo();
+  }
+}
+
+function showBanner(show){
+  $('cfg-banner').classList.toggle('hidden',!show);
+}
+
+// ══ RENDER ALL ════════════════════════════════════════════════════════════════
+function renderAll(cati, web, control, log){
+  renderEjecutivo(cati, web, control, log);
+  renderCATI(cati, control);
+  renderWEB(web, log);
+  renderMetas(control);
+  renderProyeccion(log, control);
+}
+
+// ── EJECUTIVO ─────────────────────────────────────────────────────────────────
+function renderEjecutivo(cati, web, control, log){
+  const catiLog  = cati.filter(r=>r.estado==='Completa').length;
+  const webVal   = web.filter(r=>r.valida==='Sí').length;
+  const total    = catiLog + webVal;
+  const pctTotal = total / META_TOTAL;
+
+  // Barra de progreso
+  const pctC = Math.min(catiLog/META_TOTAL,1)*100;
+  const pctW = Math.min(webVal/META_TOTAL,1)*100;
+  $('prog-bar-cati').style.width = pctC+'%';
+  $('prog-bar-web').style.width  = Math.max(0, Math.min(pctW, 100-pctC))+'%';
+  $('prog-label-cati').textContent = catiLog > 80 ? `CATI: ${fmt(catiLog)}` : '';
+  $('prog-label-web').textContent  = webVal  > 80 ? `WEB: ${fmt(webVal)}` : '';
+  $('prog-pct').textContent = pct(total,META_TOTAL)+'%';
+
+  // Métricas
+  const celdasOk   = control.filter(r=>r.total>=r.meta).length;
+  const celdasTot  = control.length;
+  const diasRestantes = CFG.fechaCierre ? Math.max(0, Math.round((parseDate(CFG.fechaCierre)-new Date())/86400000)) : '–';
+  const prodDia = log.length>=3 ? (log.slice(-5).reduce((a,r)=>a+r.total_dia,0)/Math.min(5,log.length)).toFixed(1) : '–';
+
+  $('metrics-exec').innerHTML = [
+    {label:'Total logradas',value:fmt(total),cls:'gold',sub:`${pct(total,META_TOTAL)}% de 3.500`,badge:total>0?{t:'EN CURSO',c:'green'}:null},
+    {label:'CATI completas',value:fmt(catiLog),cls:'cati',sub:`${pct(catiLog,META_TOTAL)}% de meta`},
+    {label:'WEB válidas',value:fmt(webVal),cls:'web',sub:`${pct(webVal,META_TOTAL)}% de meta`},
+    {label:'Celdas completadas',value:`${celdasOk}/${celdasTot}`,cls:'teal',sub:`${pct(celdasOk,celdasTot)}% del total`},
+    {label:'Prod. diaria (últ.5d)',value:prodDia,cls:'amber',sub:'encuestas/día promedio'},
+    {label:'Días restantes',value:diasRestantes,cls:diasRestantes<10&&diasRestantes!=='–'?'red':'teal',sub:CFG.fechaCierre||'Sin fecha configurada'},
+  ].map(m=>`<div class="metric ${m.cls}">
+    <div class="m-label">${m.label}</div>
+    <div class="m-value ${m.cls}">${m.value}</div>
+    <div class="m-sub">${m.sub}</div>
+    ${m.badge?`<span class="m-badge ${m.badge.c}">${m.badge.t}</span>`:''}
+  </div>`).join('');
+
+  // Gráfico segmento
+  const segLogradas = SEG_CODES.map(cod=>{
+    const rows = control.filter(r=>r.seg===cod);
+    return {total:rows.reduce((a,r)=>a+r.total,0), meta:rows.reduce((a,r)=>a+r.meta,0)};
+  });
+  killChart('chart-seg-exec');
+  charts['chart-seg-exec'] = new Chart($('chart-seg-exec'),{
+    type:'bar',
+    data:{
+      labels:SEG_LABELS,
+      datasets:[
+        {label:'Logradas',data:segLogradas.map(s=>s.total),backgroundColor:SEG_COLORS,borderRadius:4},
+        {label:'Meta',data:segLogradas.map(s=>s.meta),backgroundColor:'rgba(255,255,255,0.06)',borderRadius:4},
+      ]
+    },
+    options:{responsive:true,plugins:{legend:{labels:{color:'#95A5A6',font:{size:10}}}},
+      scales:{x:{ticks:{color:'#95A5A6',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{ticks:{color:'#95A5A6',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}}}}
+  });
+
+  // Donut mix canales
+  killChart('chart-mix');
+  charts['chart-mix'] = new Chart($('chart-mix'),{
+    type:'doughnut',
+    data:{labels:['CATI','WEB','Pendiente'],
+      data:[catiLog,webVal,Math.max(0,META_TOTAL-total)],
+      datasets:[{data:[catiLog,webVal,Math.max(0,META_TOTAL-total)],
+        backgroundColor:['#2E75B6','#1E8449','rgba(255,255,255,0.06)'],
+        borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,cutout:'65%',plugins:{legend:{labels:{color:'#95A5A6',font:{size:10}},position:'bottom'}}}
+  });
+
+  // Curva diaria
+  const labels = log.map(r=>r.fecha);
+  const acumReal = log.map(r=>r.total_acum);
+  // Proyección lineal
+  const proy = [];
+  if(log.length>=2){
+    const rate = log.slice(-5).reduce((a,r)=>a+r.total_dia,0)/Math.min(5,log.length);
+    const last = acumReal[acumReal.length-1]||0;
+    for(let i=0;i<=14;i++) proy.push(last+rate*(i+1));
+  }
+  killChart('chart-curva');
+  charts['chart-curva'] = new Chart($('chart-curva'),{
+    type:'line',
+    data:{labels:[...labels,...(proy.length?Array.from({length:14},(_,i)=>`+${i+1}d`):[])],
+      datasets:[
+        {label:'Real',data:[...acumReal,...Array(proy.length).fill(null)],
+          borderColor:'#2E75B6',backgroundColor:'rgba(46,117,182,.15)',fill:true,tension:.3,pointRadius:2},
+        {label:'Proyección',data:[...Array(acumReal.length).fill(null),...proy],
+          borderColor:'#C8A84B',borderDash:[5,4],tension:.3,pointRadius:0,fill:false},
+        {label:'Meta 3.500',data:Array(labels.length+proy.length).fill(META_TOTAL),
+          borderColor:'rgba(192,57,43,.6)',borderDash:[3,3],pointRadius:0,fill:false},
+      ]},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#95A5A6',font:{size:10}}}},
+      scales:{x:{ticks:{color:'#95A5A6',font:{size:9},maxTicksLimit:12},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{ticks:{color:'#95A5A6',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}}}}
+  });
+
+  // Semáforos por segmento
+  $('semafor-segs').innerHTML = SEG_CODES.map((cod,i)=>{
+    const rows = control.filter(r=>r.seg===cod);
+    const tot  = rows.reduce((a,r)=>a+r.total,0);
+    const meta = rows.reduce((a,r)=>a+r.meta,0);
+    const p    = meta>0?tot/meta:0;
+    const icon = p>=1?'✅':p>=.7?'🟡':p>=.3?'🟠':'🔴';
+    return `<div class="semafor-item">
+      <div class="semafor-icon">${icon}</div>
+      <div class="semafor-label">${SEG_LABELS[i]}</div>
+      <div class="semafor-val" style="color:${SEG_COLORS[i]}">${fmt(tot)} / ${fmt(meta)}</div>
+      <div style="font-size:10px;color:var(--text2);margin-top:3px">${pct(tot,meta)}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ── CATI ──────────────────────────────────────────────────────────────────────
+function renderCATI(cati, control){
+  const gestion = cati.filter(r=>r.tipif||r.contactado||r.estado);
+  const contactados = cati.filter(r=>r.contactado==='Sí'||r.contactado==='SI');
+  const logradas    = cati.filter(r=>r.estado==='Completa');
+  const rechazadas  = cati.filter(r=>r.estado==='Rechazada');
+  const tcont = gestion.length>0 ? pct(contactados.length,gestion.length) : '0.0';
+  const tconv = contactados.length>0 ? pct(logradas.length,contactados.length) : '0.0';
+  const trech = contactados.length>0 ? pct(rechazadas.length,contactados.length) : '0.0';
+
+  $('metrics-cati').innerHTML = [
+    {label:'Universo CATI',value:fmt(4160+19258),cls:'cati',sub:'Total contactos en muestra'},
+    {label:'Registros gestionados',value:fmt(gestion.length),cls:'teal',sub:pct(gestion.length,4160+19258)+'% del universo'},
+    {label:'Contactados',value:fmt(contactados.length),cls:'teal',sub:'Tasa contacto: '+tcont+'%'},
+    {label:'Logradas CATI',value:fmt(logradas.length),cls:'gold',sub:'Tasa conversión: '+tconv+'%'},
+    {label:'Rechazadas',value:fmt(rechazadas.length),cls:'amber',sub:'Tasa rechazo: '+trech+'%'},
+    {label:'Tasa de contacto',value:tcont+'%',cls:parseFloat(tcont)>=40?'teal':'amber',sub:'Meta referencial: >40%'},
+  ].map(m=>`<div class="metric ${m.cls}">
+    <div class="m-label">${m.label}</div>
+    <div class="m-value ${m.cls}">${m.value}</div>
+    <div class="m-sub">${m.sub}</div>
+  </div>`).join('');
+
+  // Embudo
+  const univ = 4160+19258;
+  killChart('chart-embudo');
+  charts['chart-embudo'] = new Chart($('chart-embudo'),{
+    type:'bar',
+    data:{
+      labels:['Universo','Gestionados','Contactados','Encuestas\nLogradas'],
+      datasets:[{data:[univ,gestion.length,contactados.length,logradas.length],
+        backgroundColor:['rgba(46,117,182,.4)','rgba(46,117,182,.6)','rgba(29,158,117,.6)','rgba(200,168,75,.9)'],
+        borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#95A5A6',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{ticks:{color:'#BDC3C7',font:{size:10}},grid:{display:false}}}}
+  });
+
+  // Tipificación
+  const tipifCount = {};
+  gestion.forEach(r=>{ if(r.tipif){tipifCount[r.tipif]=(tipifCount[r.tipif]||0)+1;} });
+  const tipifSorted = Object.entries(tipifCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const PALETTE=['#C8A84B','#2E75B6','#1E8449','#E67E22','#8E44AD','#E74C3C','#1ABC9C','#95A5A6'];
+  killChart('chart-tipif');
+  charts['chart-tipif'] = new Chart($('chart-tipif'),{
+    type:'doughnut',
+    data:{labels:tipifSorted.map(d=>d[0]),datasets:[{data:tipifSorted.map(d=>d[1]),
+      backgroundColor:PALETTE,borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,cutout:'60%',plugins:{legend:{display:false}}}
+  });
+  $('legend-tipif').innerHTML = tipifSorted.map((d,i)=>
+    `<span style="color:${PALETTE[i]}">● ${d[0]}: ${fmt(d[1])}</span>`).join('  ');
+
+  // Regiones CATI
+  const regCount = {};
+  logradas.forEach(r=>{ if(r.region){regCount[r.region]=(regCount[r.region]||0)+1;} });
+  const regTop = Object.entries(regCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  killChart('chart-cati-reg');
+  charts['chart-cati-reg'] = new Chart($('chart-cati-reg'),{
+    type:'bar',
+    data:{labels:regTop.map(d=>d[0]),datasets:[{data:regTop.map(d=>d[1]),
+      backgroundColor:'rgba(46,117,182,.7)',borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#95A5A6',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{ticks:{color:'#BDC3C7',font:{size:9}},grid:{display:false}}}}
+  });
+
+  // Intentos
+  const intentos=[0,0,0];
+  cati.forEach(r=>{ if(r.intento>=1&&r.intento<=3) intentos[r.intento-1]++; });
+  killChart('chart-intentos');
+  charts['chart-intentos'] = new Chart($('chart-intentos'),{
+    type:'bar',
+    data:{labels:['1er intento','2do intento','3er intento'],
+      datasets:[{data:intentos,backgroundColor:['rgba(200,168,75,.8)','rgba(46,117,182,.8)','rgba(230,126,34,.8)'],borderRadius:4}]},
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#95A5A6'},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{ticks:{color:'#95A5A6'},grid:{color:'rgba(255,255,255,.04)'}}}}
+  });
+
+  // Tabla celdas críticas
+  const criticas = control.filter(r=>r.meta>0).sort((a,b)=>(a.total/a.meta)-(b.total/b.meta)).slice(0,15);
+  $('tbody-criticas').innerHTML = criticas.map(r=>{
+    const p = r.meta>0?r.total/r.meta:0;
+    const icon = p>=1?'✅':p>=.7?'🟡':p>=.3?'🟠':'🔴';
+    return `<tr>
+      <td style="font-family:'DM Mono',monospace">${r.id}</td>
+      <td>${r.segNombre||r.seg}</td><td>${r.region}</td>
+      <td style="text-align:right">${r.meta}</td>
+      <td style="text-align:right">${r.cati_c}</td>
+      <td style="text-align:right">${r.web_v}</td>
+      <td style="text-align:right;font-weight:600">${r.total}</td>
+      <td style="text-align:right"><span class="pill ${p>=1?'green':p>=.5?'amber':'red'}">${pct(r.total,r.meta)}%</span></td>
+      <td style="text-align:center">${icon}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── WEB ────────────────────────────────────────────────────────────────────────
+function renderWEB(web, log){
+  const validas    = web.filter(r=>r.valida==='Sí');
+  const invalidas  = web.filter(r=>r.valida==='No');
+  const posibleDup = web.filter(r=>r.fueCAIT==='Sí');
+  const tComplete  = web.length>0 ? pct(web.filter(r=>r.complet>=85).length,web.length) : '0.0';
+
+  $('metrics-web').innerHTML = [
+    {label:'Total respuestas WEB',value:fmt(web.length),cls:'web',sub:'Recibidas en total'},
+    {label:'WEB válidas',value:fmt(validas.length),cls:'teal',sub:`Completitud ≥85% y no dup. CATI`},
+    {label:'WEB inválidas',value:fmt(invalidas.length),cls:'amber',sub:'Excluidas del conteo'},
+    {label:'Posibles duplicados',value:fmt(posibleDup.length),cls:'red',sub:'Contactados también por CATI'},
+    {label:'Tasa completitud',value:tComplete+'%',cls:parseFloat(tComplete)>=80?'teal':'amber',sub:'Meta: >80%'},
+    {label:'Tiempo prom.',value: web.length>0?(web.reduce((a,r)=>a+r.duracion,0)/web.length).toFixed(1)+' min':'–',
+      cls:'gold',sub:'Duración promedio encuesta'},
+  ].map(m=>`<div class="metric ${m.cls}">
+    <div class="m-label">${m.label}</div>
+    <div class="m-value ${m.cls}">${m.value}</div>
+    <div class="m-sub">${m.sub}</div>
+  </div>`).join('');
+
+  // Diario WEB
+  const logWeb = log.filter(r=>r.web_dia>0);
+  killChart('chart-web-diario');
+  charts['chart-web-diario'] = new Chart($('chart-web-diario'),{
+    type:'bar',
+    data:{labels:logWeb.map(r=>r.fecha),
+      datasets:[{label:'WEB/día',data:logWeb.map(r=>r.web_dia),
+        backgroundColor:'rgba(30,132,73,.7)',borderRadius:3}]},
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#95A5A6',font:{size:9},maxTicksLimit:15},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{ticks:{color:'#95A5A6'},grid:{color:'rgba(255,255,255,.04)'}}}}
+  });
+
+  // WEB por segmento
+  const segWeb={};
+  validas.forEach(r=>{ if(r.seg){segWeb[r.seg]=(segWeb[r.seg]||0)+1;} });
+  const PALETTE=['#C8A84B','#2E75B6','#1E8449','#E67E22','#8E44AD','#E74C3C'];
+  const segEntries=Object.entries(segWeb).sort((a,b)=>b[1]-a[1]);
+  killChart('chart-web-seg');
+  charts['chart-web-seg'] = new Chart($('chart-web-seg'),{
+    type:'doughnut',
+    data:{labels:segEntries.map(d=>d[0]),datasets:[{data:segEntries.map(d=>d[1]),
+      backgroundColor:PALETTE,borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,cutout:'60%',plugins:{legend:{display:false}}}
+  });
+  $('legend-web-seg').innerHTML = segEntries.map((d,i)=>
+    `<span style="color:${PALETTE[i%PALETTE.length]}">● ${d[0]}: ${fmt(d[1])}</span>`).join('  ');
+
+  // WEB por región
+  const regWeb={};
+  validas.forEach(r=>{ if(r.region){regWeb[r.region]=(regWeb[r.region]||0)+1;} });
+  const regTop=Object.entries(regWeb).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  killChart('chart-web-reg');
+  charts['chart-web-reg'] = new Chart($('chart-web-reg'),{
+    type:'bar',
+    data:{labels:regTop.map(d=>d[0]),datasets:[{data:regTop.map(d=>d[1]),
+      backgroundColor:'rgba(30,132,73,.7)',borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#95A5A6',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{ticks:{color:'#BDC3C7',font:{size:9}},grid:{display:false}}}}
+  });
+}
+
+// ── METAS HEATMAP ─────────────────────────────────────────────────────────────
+function renderMetas(control){
+  const thead = $('heatmap-thead');
+  const tbody = $('heatmap-tbody');
+  const segsPresentes = SEG_CODES; // Siempre mostrar los 6 segmentos
+  const shortSeg = SEG_LABELS_SHORT;
+
+  thead.innerHTML = `<tr>
+    <th class="reg">Región</th>
+    ${segsPresentes.map(cod=>{
+      const i=SEG_CODES.indexOf(cod);
+      return `<th style="color:${SEG_COLORS[i]};max-width:90px;font-size:9px" title="${SEG_LABELS[i]}">${shortSeg[i]}</th>`;
+    }).join('')}
+    <th>Total Log.</th><th>Meta</th><th>% Cumpl.</th>
+  </tr>`;
+
+  let html='';
+  let totLog=0,totMeta=0;
+  REGIONS.forEach(reg=>{
+    const row=`<tr>
+      <td class="reg">${reg}</td>
+      ${segsPresentes.map(cod=>{
+        const cell=control.find(r=>r.seg===cod&&r.region===reg);
+        const metaObj = (METAS_MATRIX[reg]||[])[SEG_CODES.indexOf(cod)]||0;
+        if(!cell && metaObj===0) return `<td style="color:var(--text2)">–</td>`;
+        if(!cell && metaObj>0)   return `<td style="color:var(--slate)">0/${metaObj}</td>`;
+        if(cell.meta===0)        return `<td style="color:var(--text2)">–</td>`;
+        const p=cell.meta>0?cell.total/cell.meta:0;
+        const bg=heatColor(p);
+        return `<td style="background:${bg}22;color:${bg};font-weight:600">${cell.total}/${cell.meta}</td>`;
+      }).join('')}
+      ${(()=>{
+        const rows=control.filter(r=>r.region===reg);
+        const tl=rows.reduce((a,r)=>a+r.total,0);
+        const metaMatrix=(METAS_MATRIX[reg]||[]).reduce((a,v)=>a+v,0);
+        const tm=rows.length>0?rows.reduce((a,r)=>a+r.meta,0):metaMatrix;
+        totLog+=tl; totMeta+=tm;
+        const p=tm>0?tl/tm:0;
+        return `<td class="total-col">${tl}</td><td>${tm}</td>
+          <td style="color:${heatColor(p)};font-weight:600">${pct(tl,tm)}%</td>`;
+      })()}
+    </tr>`;
+    html+=row;
+  });
+  html+=`<tr class="total-row">
+    <td><strong>TOTAL</strong></td>
+    ${segsPresentes.map(cod=>{
+      const rows=control.filter(r=>r.seg===cod);
+      const tl=rows.reduce((a,r)=>a+r.total,0);
+      const tm=rows.reduce((a,r)=>a+r.meta,0);
+      return `<td>${tl}/${tm}</td>`;
+    }).join('')}
+    <td>${totLog}</td><td>${totMeta}</td><td>${pct(totLog,totMeta)}%</td>
+  </tr>`;
+  tbody.innerHTML=html;
+}
+
+// ── PROYECCIÓN ─────────────────────────────────────────────────────────────────
+function renderProyeccion(log, control){
+  const total  = log.length>0 ? log[log.length-1].total_acum : 0;
+  const brecha = META_TOTAL - total;
+  const prodMedia5 = log.length>=3 ? log.slice(-5).reduce((a,r)=>a+r.total_dia,0)/Math.min(5,log.length) : 0;
+  const diasNec = prodMedia5>0 ? Math.ceil(brecha/prodMedia5) : '–';
+  const diasRest = CFG.fechaCierre ? Math.max(0,Math.round((parseDate(CFG.fechaCierre)-new Date())/86400000)) : '–';
+  const nec_dia = (diasRest!=='–'&&diasRest>0) ? (brecha/diasRest).toFixed(1) : '–';
+  const celdasOk = control.filter(r=>r.total>=r.meta).length;
+  const celdasCrit = control.filter(r=>r.meta>0&&r.total/r.meta<0.3).length;
+
+  $('metrics-proy').innerHTML = [
+    {label:'Logradas acumuladas',value:fmt(total),cls:'gold',sub:pct(total,META_TOTAL)+'% de meta'},
+    {label:'Brecha restante',value:fmt(brecha),cls:brecha>0?'amber':'teal',sub:'Encuestas por lograr'},
+    {label:'Prod. media 5d',value:prodMedia5.toFixed(1),cls:'cati',sub:'encuestas/día'},
+    {label:'Días necesarios',value:diasNec,cls:typeof diasNec==='number'&&diasRest!=='–'&&diasNec>diasRest?'red':'teal',sub:'Al ritmo actual'},
+    {label:'Celdas completadas',value:fmt(celdasOk),cls:'teal',sub:`de ${control.length} celdas`},
+    {label:'Celdas críticas',value:fmt(celdasCrit),cls:celdasCrit>5?'red':'amber',sub:'<30% cumplimiento'},
+  ].map(m=>`<div class="metric ${m.cls}">
+    <div class="m-label">${m.label}</div>
+    <div class="m-value ${m.cls}">${m.value}</div>
+    <div class="m-sub">${m.sub}</div>
+  </div>`).join('');
+
+  // Curva proyección
+  const labels=[...log.map(r=>r.fecha)];
+  const real=[...log.map(r=>r.total_acum)];
+  const proy=[...Array(real.length).fill(null)];
+  const lastReal=real[real.length-1]||0;
+  const dias=14;
+  for(let i=1;i<=dias;i++){
+    labels.push(`+${i}d`);
+    real.push(null);
+    proy.push(prodMedia5>0?Math.min(META_TOTAL,lastReal+prodMedia5*i):null);
+  }
+  killChart('chart-proy');
+  charts['chart-proy'] = new Chart($('chart-proy'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Avance real',data:real,borderColor:'#2E75B6',backgroundColor:'rgba(46,117,182,.1)',fill:true,tension:.3,pointRadius:2},
+      {label:'Proyección',data:proy,borderColor:'#C8A84B',borderDash:[6,4],tension:.3,pointRadius:0,fill:false},
+      {label:'Meta 3.500',data:Array(labels.length).fill(META_TOTAL),borderColor:'rgba(192,57,43,.5)',borderDash:[3,3],pointRadius:0,fill:false},
+    ]},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{color:'#95A5A6',font:{size:10}}}},
+      scales:{x:{ticks:{color:'#95A5A6',font:{size:9},maxTicksLimit:14},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{ticks:{color:'#95A5A6'},grid:{color:'rgba(255,255,255,.04)'}}}}
+  });
+
+  // Producción diaria
+  killChart('chart-prod-diaria');
+  charts['chart-prod-diaria'] = new Chart($('chart-prod-diaria'),{
+    type:'bar',
+    data:{labels:log.map(r=>r.fecha),
+      datasets:[
+        {label:'CATI',data:log.map(r=>r.cati_dia),backgroundColor:'rgba(46,117,182,.8)',borderRadius:3},
+        {label:'WEB', data:log.map(r=>r.web_dia), backgroundColor:'rgba(30,132,73,.8)',borderRadius:3},
+      ]},
+    options:{responsive:true,plugins:{legend:{labels:{color:'#95A5A6',font:{size:10}}}},
+      scales:{x:{stacked:true,ticks:{color:'#95A5A6',font:{size:9},maxTicksLimit:15},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{stacked:true,ticks:{color:'#95A5A6'},grid:{color:'rgba(255,255,255,.04)'}}}}
+  });
+
+  // Celdas
+  const celdasPend=control.filter(r=>r.meta>0&&r.total<r.meta).length;
+  killChart('chart-celdas');
+  charts['chart-celdas'] = new Chart($('chart-celdas'),{
+    type:'doughnut',
+    data:{labels:['Completadas','En curso','Críticas (<30%)'],
+      datasets:[{data:[celdasOk,control.length-celdasOk-celdasCrit,celdasCrit],
+        backgroundColor:['#1D9E75','#2E75B6','#C0392B'],borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,cutout:'60%',plugins:{legend:{labels:{color:'#95A5A6',font:{size:10}},position:'bottom'}}}
+  });
+}
+
+// ══ DEMO DATA ══════════════════════════════════════════════════════════════════
+function useDemo(){
+  showBanner(true);
+  CFG.demo=true;
+
+  // Generar CATI demo
+  const tipifs=['Completa','Parcial','Rechazada','No Contesta','Buzón','Número Equivocado','Fuera de Servicio'];
+  const wTipif=[0.15,0.08,0.10,0.30,0.20,0.10,0.07];
+  const motivos=['No tiene tiempo','No le interesa','Desconfianza','Mala experiencia','Otro'];
+  const encuestadores=['Ana Soto','Carlos Pérez','María López','Juan Vera','Rosa Díaz'];
+  const regsDemo=['Región Metropolitana','Valparaíso','Biobío','Maule','La Araucanía','Los Lagos','Antofagasta','O\'Higgins','Coquimbo','Tarapacá'];
+  function wRand(opts,ws){const r=Math.random(),cum=ws.reduce((a,w,i)=>[...a,{v:opts[i],c:(a[i-1]?.c||0)+w}],[]);return cum.find(x=>r<=x.c)?.v||opts[0];}
+
+  const cati=[];
+  SEG_CODES.forEach((cod,si)=>{
+    const n=Math.floor(Math.random()*300)+50;
+    for(let i=0;i<n;i++){
+      const estado=wRand(tipifs,wTipif);
+      cati.push({
+        seg:cod,region:regsDemo[Math.floor(Math.random()*regsDemo.length)],
+        tipif:estado,contactado:['Completa','Parcial','Rechazada'].includes(estado)?'Sí':'No',
+        estado,motivo:estado==='Rechazada'?motivos[Math.floor(Math.random()*motivos.length)]:'',
+        intento:Math.random()<.5?1:Math.random()<.7?2:3,
+        encuestador:encuestadores[Math.floor(Math.random()*encuestadores.length)],
+      });
+    }
+  });
+
+  // Generar WEB demo
+  const web=[];
+  for(let i=0;i<Math.floor(Math.random()*200)+80;i++){
+    const seg=SEG_CODES[Math.floor(Math.random()*SEG_CODES.length)];
+    const reg=regsDemo[Math.floor(Math.random()*regsDemo.length)];
+    const comp=Math.random()<.85?Math.floor(Math.random()*16)+85:Math.floor(Math.random()*85);
+    const fueC=Math.random()<.05?'Sí':'No';
+    web.push({seg,region:reg,complet:comp,fueCAIT:fueC,valida:comp>=85&&fueC==='No'?'Sí':'No',duracion:Math.random()*12+3});
+  }
+
+  // Generar control demo desde metas
+  const control=[];
+  REGIONS.forEach(reg=>{
+    SEG_CODES.forEach((cod,j)=>{
+      const meta=(METAS_MATRIX[reg]||[])[j]||0;
+      if(meta===0) return;
+      const pctAv=Math.random()*0.45;
+      const cati_c=Math.floor(meta*pctAv*0.7);
+      const web_v=Math.floor(meta*pctAv*0.3);
+      const total=cati_c+web_v;
+      control.push({
+        id:`S${j+1}R${REGIONS.indexOf(reg)+1}`,
+        seg:cod,segNombre:SEG_LABELS[j],tipo:j<2?'Empleador':'Trabajador',
+        region:reg,meta,cati_c,cati_p:0,cati_r:0,web_v,total,
+        pct:meta>0?total/meta:0,brecha:meta-total,
+        semaforo:total>=meta?'✅ COMPLETA':total/meta>=.7?'🟡 EN CURSO':total/meta>=.3?'🟠 REZAGADA':'🔴 CRÍTICA',
+      });
+    });
+  });
+
+  // LOG diario demo (últimos 20 días)
+  const log=[];
+  let acum=0;
+  for(let i=19;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const diaCATI=Math.floor(Math.random()*30)+10;
+    const diaWEB=Math.floor(Math.random()*15)+3;
+    acum+=diaCATI+diaWEB;
+    log.push({fecha:d.toLocaleDateString('es-CL'),cati_dia:diaCATI,web_dia:diaWEB,
+      total_dia:diaCATI+diaWEB,total_acum:acum,cati_acum:acum,web_acum:0,enc_activos:Math.floor(Math.random()*4)+3});
+  }
+
+  $('topbar-meta').textContent=`Demo — ${fmt(cati.length)} registros CATI · ${fmt(web.filter(w=>w.valida==='Sí').length)} WEB válidas (datos simulados)`;
+  renderAll(cati,web,control,log);
+}
+
+// ══ UTILS ═════════════════════════════════════════════════════════════════════
+function parseDate(s){
+  if(!s) return null;
+  const [d,m,y]=s.split('/').map(Number);
+  return new Date(y,m-1,d);
+}
+
+// ══ INIT ══════════════════════════════════════════════════════════════════════
+window.addEventListener('load',()=>{
+  if(CFG.sheetId && CFG.apiKey){ loadData(); }
+  else { openModal(); }
+});
+</script>
+</body>
+</html>
